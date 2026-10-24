@@ -17,12 +17,8 @@ This agent calls realtors and business owners to book meetings for NSOL BPO's vi
 pip install -r requirements.txt
 ```
 
-### 2. Your .env is Already Configured
-```env
-TWILIO_ACCOUNT_SID=ACed4144f8e6fce5a1715d038604318ad2
-TWILIO_AUTH_TOKEN=58ce8f7af58a9e9278f05a6f13022a32
-TWILIO_FROM_NUMBER=+14243952905
-```
+### 2. Configure Twilio credentials locally
+Create a local `.env` file or set the required environment variables in your deployment environment. Configure `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_FROM_NUMBER` with values from your Twilio account. Never commit real credentials. If any credentials were previously committed, rotate them; removing them from this file does not remove them from Git history.
 
 ### 3. Install ngrok (for webhook URL)
 Download from: https://ngrok.com/download
