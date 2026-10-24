@@ -1,31 +1,17 @@
-# Merideth Cold Calling System - Dependencies
-
-# Core
-python-dotenv>=1.0.0
-
-# Web Framework
-fastapi>=0.109.0
-uvicorn[standard]>=0.27.0
-python-multipart>=0.0.6
-
-# LiveKit Agent SDK (voice AI)
-livekit>=1.0.0
-livekit-agents>=1.0.0
-livekit-plugins-deepgram>=0.6.0
-livekit-plugins-elevenlabs>=1.0.0
-livekit-plugins-openai>=0.7.0
-livekit-plugins-silero>=1.0.0
-livekit-plugins-noise-cancellation>=0.2.3
-
-# OpenAI (for fallback Q&A and STT)
-openai>=1.0.0
-
-# Twilio (for outbound calls)
-twilio>=9.0.0
-
-# Data Validation
-pydantic>=2.5.0
-pydantic-settings>=2.1.0
-
-# HTTP Client
-httpx>=0.25.0
+fastapi>=0.109,<1.0
+uvicorn[standard]>=0.27,<1.0
+python-multipart>=0.0.6,<1.0
+python-dotenv>=1.0,<2.0
+livekit>=1.0,<2.0
+livekit-agents>=1.0,<2.0
+livekit-plugins-deepgram>=0.6,<2.0
+livekit-plugins-elevenlabs>=1.0,<2.0
+livekit-plugins-openai>=0.7,<2.0
+livekit-plugins-silero>=1.0,<2.0
+livekit-plugins-noise-cancellation>=0.2.3,<2.0
+openai>=1.0,<3.0
+twilio>=9.0,<10.0
+pydantic>=2.5,<3.0
+pydantic-settings>=2.1,<3.0
+httpx>=0.25,<1.0
+requests>=2.31,<3.0

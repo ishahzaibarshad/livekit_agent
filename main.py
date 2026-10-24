@@ -21,7 +21,7 @@
 
 # from openai import AsyncOpenAI
 
-# from config.settings import settings
+# from config.settings import require_livekit_credentials, settings
 # from utils.logger import setup_logging
 # from utils.twilio_service import TwilioOutboundService, TwilioMediaStreamHandler
 
@@ -297,14 +297,14 @@
 #     global twilio_service
 #     logger.info("Starting NSOL BPO Cold Calling Assistant - Merideth")
 #     logger.info(f"Debug mode: {settings.DEBUG}")
-    
+
 #     # Initialize Twilio service
 #     try:
 #         twilio_service = TwilioOutboundService()
 #         logger.info("Twilio service initialized successfully")
 #     except ValueError as e:
 #         logger.warning(f"Twilio service not available: {e}")
-    
+
 #     yield
 #     logger.info("Shutting down")
 
@@ -371,13 +371,13 @@
 # async def place_outbound_call(request: OutboundCallRequest):
 #     """
 #     Place an outbound call using Twilio Programmable Voice + Media Streams
-    
+
 #     This endpoint:
 #     1. Initiates a call via Twilio REST API
 #     2. Twilio calls the webhook_url which returns TwiML
 #     3. TwiML establishes a bidirectional Media Stream to /twilio/media WebSocket
 #     4. Audio is streamed between Twilio and LiveKit agent
-    
+
 #     Example:
 #         POST /api/outbound/call
 #         {
@@ -390,27 +390,27 @@
 #             status_code=500,
 #             detail="Twilio service not configured. Please set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER"
 #         )
-    
+
 #     try:
 #         # Generate room name if not provided
 #         room_name = request.room_name or f"call-{int(time.time())}"
-        
+
 #         # Construct webhook URL (Twilio will call this to get TwiML)
 #         webhook_url = f"{request.webhook_base_url.rstrip('/')}/twilio/webhook?room_name={room_name}"
-        
+
 #         # Construct status callback URL
 #         status_callback_url = f"{request.webhook_base_url.rstrip('/')}/twilio/status"
-        
+
 #         # Place the call
 #         result = twilio_service.place_call(
 #             to_number=request.to_number,
 #             webhook_url=webhook_url,
 #             status_callback_url=status_callback_url
 #         )
-        
+
 #         if result["success"]:
 #             websocket_url = f"wss://{request.webhook_base_url.replace('https://', '').replace('http://', '').rstrip('/')}/twilio/media"
-            
+
 #             return OutboundCallResponse(
 #                 success=True,
 #                 call_sid=result["call_sid"],
@@ -423,7 +423,7 @@
 #                 success=False,
 #                 error=result.get("error", "Unknown error")
 #             )
-    
+
 #     except Exception as e:
 #         logger.error(f"Error in place_outbound_call: {str(e)}")
 #         raise HTTPException(status_code=500, detail=str(e))
@@ -433,35 +433,35 @@
 # async def twilio_webhook(request: Request):
 #     """
 #     Webhook endpoint for Twilio to get TwiML instructions
-    
+
 #     When Twilio makes an outbound call, it calls this endpoint.
 #     We return TwiML with <Connect><Stream> to establish a Media Stream.
-    
+
 #     Query params:
 #         - room_name: LiveKit room name for this call
 #     """
 #     # Get query parameters
 #     params = request.query_params
 #     room_name = params.get("room_name", f"call-{int(time.time())}")
-    
+
 #     # Get form data from Twilio
 #     form_data = await request.form()
 #     call_sid = form_data.get("CallSid", "unknown")
-    
+
 #     logger.info(f"Twilio webhook called for CallSID: {call_sid}, Room: {room_name}")
-    
+
 #     # Get the host from the request to build WebSocket URL
 #     host = request.headers.get("host", "localhost:8000")
 #     protocol = "wss" if "https" in str(request.url) or "ngrok" in host else "ws"
 #     websocket_url = f"{protocol}://{host}/twilio/media"
-    
+
 #     # Generate TwiML with Media Stream
 #     twiml = TwilioOutboundService.generate_twiml(
 #         websocket_url=websocket_url,
 #         call_sid=call_sid,
 #         room_name=room_name
 #     )
-    
+
 #     return Response(content=twiml, media_type="application/xml")
 
 
@@ -469,18 +469,18 @@
 # async def twilio_status_callback(request: Request):
 #     """
 #     Webhook endpoint for Twilio call status updates
-    
+
 #     Twilio sends call status events here (initiated, ringing, answered, completed)
 #     """
 #     form_data = await request.form()
 #     call_sid = form_data.get("CallSid")
 #     call_status = form_data.get("CallStatus")
-    
+
 #     logger.info(f"Call status update - SID: {call_sid}, Status: {call_status}")
-    
+
 #     if twilio_service:
 #         twilio_service.update_call_status(call_sid, call_status)
-    
+
 #     return {"status": "ok"}
 
 
@@ -488,29 +488,29 @@
 # async def twilio_media_websocket(websocket: WebSocket):
 #     """
 #     WebSocket endpoint for Twilio Media Streams
-    
+
 #     This receives bidirectional audio streams from Twilio:
 #     - Receives audio from the phone call (μ-law encoded)
 #     - Sends audio back to the phone call
-    
+
 #     The audio is bridged to/from LiveKit agent
 #     """
 #     await websocket.accept()
-    
+
 #     logger.info("Twilio Media Stream WebSocket connection established")
-    
+
 #     # We'll get the room name from the stream start message
 #     handler = TwilioMediaStreamHandler(websocket, "default-room")
-    
+
 #     try:
 #         await handler.handle_connection()
-    
+
 #     except WebSocketDisconnect:
 #         logger.info("Twilio Media Stream WebSocket disconnected")
-    
+
 #     except Exception as e:
 #         logger.error(f"Error in Media Stream WebSocket: {str(e)}")
-    
+
 #     finally:
 #         await handler.cleanup()
 
@@ -523,7 +523,7 @@
 #     GREETINGS = [
 #         "Hi, this is Merideth... how's your day going?",
 #     ]
-    
+
 #     # Mood-based responses
 #     MOOD_RESPONSES = {
 #         "tired": "I hear you. I'll keep this super quick... just two minutes.",
@@ -533,14 +533,14 @@
 #         "positive": "That's amazing! Let me make it even better.",
 #         "neutral": "Glad to hear it.",
 #     }
-    
+
 #     # Response when they ask how you are
 #     HOW_ARE_YOU_RESPONSES = [
 #         "I'm doing great, thanks for asking! So, I'm reaching out because...",
 #         "I'm good, appreciate you asking! Quick question for you...",
 #         "Doing well, thank you! Listen, I wanted to talk to you about...",
 #     ]
-    
+
 #     # Initial response to "who is this"
 #     WHO_IS_THIS = "This is Merideth calling from NSOL BPO. Do you have a brief moment to speak?"
 
@@ -550,7 +550,7 @@
 #         "and AI automation. Let me ask you... are you handling all those admin tasks yourself, "
 #         "or do you have some support?"
 #     )
-    
+
 #     # Qualifying paths based on their answer
 #     QUALIFYING_PATHS = {
 #         "self_handling": "Got it. Can I ask... what's eating up most of your time right now?",
@@ -570,7 +570,7 @@
 #         "You know what, our senior business consultant can show you exactly how this works on a quick Zoom call. "
 #         "Should I send the link by text or email?"
 #     )
-    
+
 #     # Booking flow - matches the NSOL BPO script order
 #     BOOKING_FLOW = {
 #         "ask_day_time": "Perfect! What day and time works best for you?",
@@ -647,7 +647,7 @@
 #         "goodbye_end": "Thank you so much for your time. I really appreciate the conversation. Have a great day ahead!",
 #         "send_info_end": "Great. I'll send over the information to your email shortly. If you have any questions afterward, feel free to reach out. Have a great day!",
 #     }
-    
+
 #     # Conversation continuity phrases
 #     CONTINUITY = {
 #         "go_on": "Great. So as I was saying...",
@@ -664,7 +664,7 @@
 #         "understand": "I understand.",
 #         "appreciate": "I appreciate that.",
 #     }
-    
+
 #     # Email spelling confirmations
 #     EMAIL_CONFIRM = {
 #         "ask_spell": "Could you please spell that out for me?",
@@ -672,7 +672,7 @@
 #         "wrong_email": "Thank you for the correction. So it's {email}. Got it.",
 #         "got_email": "Got it. So that's {email}. Right?",
 #     }
-    
+
 #     # Phone confirmations
 #     PHONE_CONFIRM = {
 #         "ask_digits": "Could you please provide the digits one by one?",
@@ -876,7 +876,7 @@
 #     """Detect if user is saying hello/greeting to start conversation."""
 #     t = normalize(text)
 #     greetings = [
-#         "hello", "hi", "hey", "yo", "good morning", "good afternoon", 
+#         "hello", "hi", "hey", "yo", "good morning", "good afternoon",
 #         "good evening", "whats up", "sup", "howdy", "greetings",
 #         "this is", "speaking", "yes", "yeah", "yep", "uh huh",
 #         "whos this", "who is this", "whos calling", "who is calling"
@@ -890,14 +890,14 @@
 #     Returns (needs_rounding, suggested_time).
 #     """
 #     t = text.lower().strip()
-    
+
 #     # Look for time patterns like "2:30", "2:45 pm", "10:15 am"
 #     time_pattern = re.search(r'(\d{1,2}):(\d{2})\s*(am|pm)?', t, re.I)
 #     if time_pattern:
 #         hour = int(time_pattern.group(1))
 #         minutes = int(time_pattern.group(2))
 #         period = time_pattern.group(3) or ""
-        
+
 #         if minutes != 0:
 #             # Round to nearest hour
 #             if minutes >= 30:
@@ -908,7 +908,7 @@
 #                     period = "pm"
 #             suggested = f"{hour}:00 {period}".strip()
 #             return True, suggested
-    
+
 #     return False, text
 
 
@@ -1210,7 +1210,7 @@
 #             "Ha, you know what, I'm not totally sure. But so, the reason I called...",
 #             "Hmm, I'd have to check on that. But hey, do you have a second?",
 #         ]
-        
+
 #         if not openai_client:
 #             t = normalize(user_text)
 #             # Identity question fallback
@@ -1238,7 +1238,7 @@
 #             content = content.replace("I'm an AI", "I'm an assistant")
 #             content = content.replace("I'm a language model", "I'm an assistant")
 #             content = content.replace("I'm a bot", "I'm an assistant")
-            
+
 #             # CRITICAL: Remove any greeting that might slip through from STATE_MACHINE_PROMPT
 #             # This prevents duplicate greetings during conversation
 #             greeting_patterns = [
@@ -1253,11 +1253,11 @@
 #                     content = content.replace(pattern, "")
 #                     content = content.replace(pattern.lower(), "")
 #             content = content.strip()
-            
+
 #             # If content is now empty or just punctuation, use fallback
 #             if not content or len(content) < 5:
 #                 return random.choice(fallback_responses)
-            
+
 #             return content
 #         except Exception as e:
 #             print(f"OpenAI error: {e}")
@@ -1266,7 +1266,7 @@
 #     async def answer_any_random_or_generic(user_text: str) -> bool:
 #         if not looks_like_random_or_generic_query(user_text):
 #             return False
-        
+
 #         # Choose the right prompt based on the question type
 #         if is_identity_question(user_text):
 #             system = IDENTITY_Q_SYSTEM
@@ -1274,7 +1274,7 @@
 #             system = SERVICE_Q_SYSTEM
 #         else:
 #             system = GENERIC_Q_SYSTEM
-        
+
 #         ans = await openai_answer(user_text, system)
 #         await say(ans)
 #         # if service-related, allow moving to booking ask later
@@ -1340,14 +1340,14 @@
 #     async def handle(user_text: str):
 #         state = session.userdata.get("state", "waiting_for_user")
 #         was_interrupted = session.userdata.get("was_interrupted", False)
-        
+
 #         print(f"DEBUG: handle() called - state='{state}', user_text='{user_text}', interrupted={was_interrupted}")
 
 #         # INTERRUPTION ACKNOWLEDGMENT: If user interrupted, acknowledge it naturally
 #         if was_interrupted and state != "waiting_for_user":
 #             print("DEBUG: User interrupted - acknowledging")
 #             session.userdata["was_interrupted"] = False  # Reset flag
-            
+
 #             # Check if it's just a simple acknowledgment (user saying "okay", "yeah", etc.)
 #             simple_acks = ["okay", "ok", "yeah", "yes", "yep", "sure", "got it", "alright", "right"]
 #             if normalize(user_text) in simple_acks:
@@ -1484,20 +1484,20 @@
 #             return
 
 #         # STATE MACHINE
-        
+
 #         if state == "opening":
 #             # User responded to "how's your day going?" - detect mood and respond
 #             mood = detect_mood(user_text)
 #             response_parts = []
-            
+
 #             if mood in agent.MOOD_RESPONSES:
 #                 response_parts.append(agent.MOOD_RESPONSES[mood])
 #             else:
 #                 response_parts.append("Glad to hear it.")
-            
+
 #             # Add main pitch
 #             response_parts.append(agent.MAIN_PITCH)
-            
+
 #             # Combine and deliver
 #             await say(" ".join(response_parts))
 #             session.userdata["state"] = "qualify"
@@ -1515,7 +1515,7 @@
 #                 await say(agent.INTEREST_RESPONSE)
 #                 session.userdata["state"] = "get_day_time"
 #                 return
-            
+
 #             # Classify their response about support
 #             support_type = classify_support(user_text)
 #             if support_type == "self":
@@ -1533,7 +1533,7 @@
 #                 await say(agent.INTEREST_RESPONSE)
 #                 session.userdata["state"] = "booking_send_method"
 #                 return
-            
+
 #             # Check if user wants to book
 #             if any(k in normalize(user_text) for k in ["book", "schedule", "set up", "zoom", "demo", "meeting"]):
 #                 await say(agent.INTEREST_RESPONSE)
@@ -1569,20 +1569,20 @@
 #             if session.userdata["refusal_count"] >= 3:
 #                 await end_call(agent.REFUSALS["firm_no"])
 #                 return
-            
+
 #             # Try different angle - single question, wait for response
 #             await say("No worries. Would saving time or getting more leads help you more right now?")
 #             session.userdata["state"] = "qualify"
 #             return
 
 #         # BOOKING FLOW: Send Method → Day/Time → Timezone → Email → Phone → Name → Confirmation
-        
+
 #         if state == "booking_send_method":
 #             # User chose text or email - acknowledge and move to day/time
 #             await say("Perfect! What day and time works best for you?")
 #             session.userdata["state"] = "get_day_time"
 #             return
-        
+
 #         if state == "get_day_time":
 #             time_text = user_text.strip()
 #             # Check if they suggested a non-standard time (like 2:30 or 3:15)
@@ -1597,7 +1597,7 @@
 #                 await say("Great! Let's get you scheduled. What's your timezone or location?")
 #             session.userdata["state"] = "get_timezone"
 #             return
-        
+
 #         if state == "confirm_rounded_time":
 #             if is_yes(user_text):
 #                 session.userdata["booking_data"]["day_time"] = session.userdata["booking_data"]["suggested_time"]
@@ -1650,7 +1650,7 @@
 #                 spelled_email = " ".join(c if c.isalnum() else f" {c} " for c in email).replace("@", " at ").replace(".", " dot ")
 #                 await say(f"Thank you for clarifying. So that's {spelled_email}. Right?")
 #                 return
-        
+
 #         if state == "get_phone":
 #             phone = user_text.strip()
 #             session.userdata["booking_data"]["phone"] = phone
@@ -1707,7 +1707,7 @@
 #                 await say("Is there anything else I can help with before we wrap up?")
 #                 session.userdata["state"] = "pre_closing"
 #                 return
-        
+
 #         if state == "pre_closing":
 #             if is_yes(user_text) or any(k in normalize(user_text) for k in ["question", "ask", "yes"]):
 #                 # User has another question
@@ -1759,7 +1759,7 @@
 # if __name__ == "__main__":
 #     logger.info("Starting NSOL BPO LiveKit Agent - Merideth")
 #     logger.info(f"Connecting to LiveKit: {settings.LIVEKIT_URL}")
-    
+
 #     # Run the LiveKit agent worker
 #     # Usage: python main.py dev (for development with auto-reload)
 #     #        python main.py start (for production)
@@ -1820,7 +1820,7 @@ from livekit.plugins import deepgram, elevenlabs, openai as lk_openai, noise_can
 
 from openai import AsyncOpenAI
 
-from config.settings import settings
+from config.settings import require_livekit_credentials, settings
 from utils.logger import setup_logging
 from utils.twilio_service import TwilioOutboundService, TwilioMediaStreamHandler
 
@@ -3337,6 +3337,7 @@ async def entrypoint(ctx: agents.JobContext):
 # Run LiveKit worker
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
+    require_livekit_credentials(settings)
     logger.info("Starting NSOL BPO LiveKit Agent - Merideth")
     logger.info(f"Connecting to LiveKit: {settings.LIVEKIT_URL}")
 
@@ -3345,8 +3346,3 @@ if __name__ == "__main__":
         num_idle_processes=3,
     )
     agents.cli.run_app(worker_options)
-
-
-
-
-
